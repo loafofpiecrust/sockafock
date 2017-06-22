@@ -1,0 +1,11 @@
+[package]
+name = "sockafock"
+version = "0.1.0"
+authors = ["Taylor Snead <taylorsnead@gmail.com>"]
+
+[dependencies]
+futures = "*"
+tokio-core = "*"
+tokio-io = "*"
+socks = "*"
+byteorder = "*"
