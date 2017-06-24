@@ -125,17 +125,10 @@ fn main() {
 
     // for each connection
     for client in listener.incoming() {
-        match client {
-            Ok(client) => {
-                // TODO: Use a taskpool?
-                // Spawn a thread to handle each new connection.
-                thread::spawn(move || {
-                    proxy(client).expect("")
-                });
-            },
-            Err(e) => {
-                println!("Connection failed! {:?}", e);
-            }
-        }
+        // TODO: Use a taskpool?
+        // Spawn a thread to handle each new connection.
+        client.map(|client| thread::spawn(move ||
+            proxy(client).expect("Failed to proxy connection.")
+        )).expect("Connection failed early!");
     }
 }
