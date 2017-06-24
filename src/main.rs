@@ -18,9 +18,10 @@ fn proxy(mut client: TcpStream) -> io::Result<()> {
     // Socks version
     client.read(data)?;
     if data[0] != 5 {
-        // TODO: Error more gracefully?
-        return Err(io::Error());
-        panic!("Only SOCKS5 is supported. No SOCKS4 or anything else.");
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Only SOCKS5 is supported. No SOCKS4 or anything else."
+        ));
     }
 
     // Authentication data
@@ -35,18 +36,20 @@ fn proxy(mut client: TcpStream) -> io::Result<()> {
     client.write(&[5, 0])?;
     // TODO: Add login capacity here!
 
-
     client.read(data)?; // socks ver again
     client.read(data)?;
     let command = data[0];
     // println!("command {:?}", command);
     if command != 1 {
         // Doesn't want to make a TCP connection!
-        // TODO: Handle more elegantly
-        panic!("Doesn't want to make a tcp connection.");
+        // TODO: Handle UDP and other connection types
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "No support for connections other than TCP."
+        ));
     }
 
-    client.read(data)?; // Reserved value, "must be 0" supposedly
+    client.read(data)?; // Reserved value, "must be 0" according to SOCKS5 spec.
     client.read(data)?;
     let addr_type = data[0];
     let port = &mut [0, 80]; // Default to port 80
@@ -59,18 +62,19 @@ fn proxy(mut client: TcpStream) -> io::Result<()> {
         },
         3 => { // Domain name (URL)
             client.read(data)?; // length of url
-            let mut url = vec![0; data[0] as usize]; // remote url buffer
+            let mut url = vec![0; data[0] as usize]; // buffer for remote url
             client.read(&mut url)?; // retrieve remote url
             client.read(port)?;
 
             let url = String::from_utf8(url).unwrap();
+            // Resolve the URL to an IP address.
             let mut host = net::lookup_host(&url)?.next().unwrap();
             host.set_port(80);
 
             host
         },
         _ => { // IPv6 address
-            unimplemented!("IPv6 addresses not supported.")
+            unimplemented!("IPv6 addresses not yet supported.")
         }
     };
 
@@ -83,7 +87,7 @@ fn proxy(mut client: TcpStream) -> io::Result<()> {
             // Send the (DNS) resolved remote ip address.
             client.write(&sock.ip().octets())?;
         }
-        _ => unimplemented!()
+        _ => unimplemented!() // IPv6
     }
     client.write(port)?; // remote port
 
