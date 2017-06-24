@@ -19,6 +19,7 @@ fn proxy(mut client: TcpStream) -> io::Result<()> {
     client.read(data)?;
     if data[0] != 5 {
         // TODO: Error more gracefully?
+        return Err(io::Error());
         panic!("Only SOCKS5 is supported. No SOCKS4 or anything else.");
     }
 
