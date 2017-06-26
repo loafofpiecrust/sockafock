@@ -185,6 +185,7 @@ impl Server {
                         let c = b.to_ascii_uppercase() as char;
                         // TODO: Only change over HTTP, _not_ HTTPS. Maybe disable if port == 443
                         // TODO: Find a non-compressed and non-encrypted website to test with.
+                        // TODO: I'm sure this could be done better.
                         if b.is_ascii() && c != ' ' && (!word.is_empty() || c == 'H' || c == 'S')  {
                             // We have a letter!
                             word.push(c);
