@@ -1,4 +1,4 @@
-#![feature(lookup_host)]
+ #![feature(lookup_host)]
 
 extern crate byteorder;
 
@@ -9,6 +9,7 @@ use std::thread;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor};
 use std::collections::{HashMap};
+use std::ascii::{AsciiExt};
 
 #[derive(Clone, Debug)]
 struct Server {
@@ -94,6 +95,7 @@ impl Server {
             // No authentication required
             if !auth_methods.contains(&0) {
                 // No auth isn't an option
+                println!("failed auth!");
                 client.write(&[5, 0xFF])?; // failure
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
@@ -176,8 +178,38 @@ impl Server {
                 let remote2 = remote.try_clone()?;
                 // Concurrently tunnel all incoming data from the remote server to the client
                 thread::spawn(move || {
-                    for b in remote2.bytes() {
-                        client2.write(&[b.unwrap()]).unwrap();
+                    // TODO: Here, flip all gendered pronouns in English. He <=> She
+                    let mut word = String::new();
+                    for b in remote2.try_clone().unwrap().bytes() {
+                        let b = b.unwrap();
+                        let c = b.to_ascii_uppercase() as char;
+                        // TODO: Only change over HTTP, _not_ HTTPS. Maybe disable if port == 443
+                        // TODO: Find a non-compressed and non-encrypted website to test with.
+                        if b.is_ascii() && c != ' ' && (!word.is_empty() || c == 'H' || c == 'S')  {
+                            // We have a letter!
+                            word.push(c);
+                            if word.starts_with("HE") {
+                                // Print 'She'
+                                println!("replacing 'He'!");
+                                client2.write(&['S' as u8, 'h' as u8, 'e' as u8]).unwrap();
+                                for _ in 0..2 {
+                                    word.remove(0);
+                                }
+                            } else if word.starts_with("SHE") {
+                                // Print 'He'
+                                println!("replacing 'She'!");
+                                client2.write(&['H' as u8, 'e' as u8]).unwrap();
+                                for _ in 0..3 {
+                                    word.remove(0);
+                                }
+                            } else {
+                                // Print the character
+                                client2.write(&[b]).unwrap();
+                            }
+                        } else {
+                            client2.write(&[b]).unwrap();
+                            word.clear();
+                        }
                     }
                 });
 
@@ -212,4 +244,9 @@ fn main() {
             server.proxy(client).expect("Failed to proxy connection.")
         )).expect("Connection failed early!");
     }
+}
+
+
+#[test]
+fn test_connect() {
 }
