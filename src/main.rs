@@ -188,18 +188,16 @@ impl Server {
                         if b.is_ascii() && c != ' ' && (!word.is_empty() || c == 'H' || c == 'S')  {
                             // We have a letter!
                             word.push(c);
-                            if word.starts_with("HE") {
-                                // Print 'She'
-                                println!("replacing 'He'!");
-                                client2.write(&['S' as u8, 'h' as u8, 'e' as u8]).unwrap();
-                                for _ in 0..2 {
-                                    word.remove(0);
-                                }
-                            } else if word.starts_with("SHE") {
+                            if word.starts_with("SHE") {
                                 // Print 'He'
-                                println!("replacing 'She'!");
                                 client2.write(&['H' as u8, 'e' as u8]).unwrap();
                                 for _ in 0..3 {
+                                    word.remove(0);
+                                }
+                            } else if word.starts_with("HE") {
+                                // Print 'She'
+                                client2.write(&['S' as u8, 'h' as u8, 'e' as u8]).unwrap();
+                                for _ in 0..2 {
                                     word.remove(0);
                                 }
                             } else {
